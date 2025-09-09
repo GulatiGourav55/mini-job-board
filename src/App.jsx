@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Routes, Route, Link, useNavigate } from 'react-router-dom'
 
 const API_BASE = '/api' // mapped to Netlify functions via netlify.toml
+
 // convert plain email -> mailto with subject
 function makeMailto(email, title) {
   const subject = `Application for ${title || 'role'}`;
@@ -90,7 +91,19 @@ function Jobs() {
             </div>
             {job.description && <p style={{whiteSpace:'pre-wrap'}}>{job.description}</p>}
             <div style={{display:'flex', gap:12, marginTop:12}}>
-              {job.applicationLink && <a href={job.applicationLink} target="_blank" rel="noreferrer" style={{background:'#2563eb', padding:'8px 12px', borderRadius:8, color:'#fff', textDecoration:'none'}}>Apply</a>}
+              {job.applicationLink && (() => {
+                const href = getApplyHref(job);
+                return href ? (
+                  <a 
+                    href={href} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    style={{background:'#2563eb', padding:'8px 12px', borderRadius:8, color:'#fff', textDecoration:'none'}}
+                  >
+                    Apply
+                  </a>
+                ) : null;
+              })()}
               <a href={window.location.href} style={{padding:'8px 12px', borderRadius:8, background:'#374151', color:'#fff', textDecoration:'none'}}>Share</a>
             </div>
           </article>
@@ -123,10 +136,26 @@ function Admin() {
   async function addJob(e) {
     e.preventDefault()
     setMsg('Saving…')
+
+    // prepare payload and convert plain email to mailto
+    const payload = { ...form }
+    if (payload.applicationLink) {
+      const link = payload.applicationLink.trim()
+      if (!link.startsWith('mailto:') && !link.startsWith('http://') && !link.startsWith('https://')) {
+        if (link.includes('@')) {
+          payload.applicationLink = `mailto:${link}?subject=${encodeURIComponent('Application for ' + (payload.title || 'role'))}`
+        } else {
+          payload.applicationLink = link
+        }
+      } else {
+        payload.applicationLink = link
+      }
+    }
+
     const res = await fetch(`${API_BASE}/jobs`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (sessionStorage.getItem('adminToken') || '') },
-      body: JSON.stringify(form)
+      body: JSON.stringify(payload)
     })
     if (!res.ok) {
       setMsg('Save failed. Check token in Netlify env.')
@@ -185,7 +214,7 @@ function Admin() {
               <input placeholder="Salary (optional)" value={form.salary} onChange={e=>setForm({...form, salary:e.target.value})} style={{padding:10, borderRadius:8, border:'1px solid #374151', background:'#0b1220', color:'#fff'}} />
             </div>
             <textarea placeholder="Description" value={form.description} onChange={e=>setForm({...form, description:e.target.value})} rows={6} style={{padding:10, borderRadius:8, border:'1px solid #374151', background:'#0b1220', color:'#fff'}} />
-            <input placeholder="Application link (https://…)" value={form.applicationLink} onChange={e=>setForm({...form, applicationLink:e.target.value})} style={{padding:10, borderRadius:8, border:'1px solid #374151', background:'#0b1220', color:'#fff'}} />
+            <input placeholder="Application email (you@company.com) or full link" value={form.applicationLink} onChange={e=>setForm({...form, applicationLink:e.target.value})} style={{padding:10, borderRadius:8, border:'1px solid #374151', background:'#0b1220', color:'#fff'}} />
             <div style={{display:'flex', gap:12}}>
               <button type="submit" style={{padding:'10px 14px', borderRadius:8, background:'#2563eb', color:'#fff'}}>Post role</button>
               <button type="button" onClick={()=>{ sessionStorage.removeItem('adminToken'); window.location.reload(); }} style={{padding:'10px 14px', borderRadius:8, background:'#374151', color:'#fff'}}>Lock</button>
