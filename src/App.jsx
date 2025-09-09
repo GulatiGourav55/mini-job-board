@@ -3,30 +3,6 @@ import { Routes, Route, Link, useNavigate } from 'react-router-dom'
 
 const API_BASE = '/api' // mapped to Netlify functions via netlify.toml
 
-// Gmail compose link builder
-function getApplyHref(job) {
-  if (!job || !job.applicationLink) return null;
-  const link = String(job.applicationLink).trim();
-
-  // If it's already a full URL (http/https), just return it
-  if (link.startsWith('http://') || link.startsWith('https://')) {
-    return link;
-  }
-
-  // If it's already mailto
-  if (link.startsWith('mailto:')) {
-    return link;
-  }
-
-  // If it's an email address
-  if (link.includes('@')) {
-    const subject = `Application for ${job.title || 'role'}`;
-    return `mailto:${link}?subject=${encodeURIComponent(subject)}`;
-  }
-
-  return link;
-}
-
 function getApplyHref(job) {
   if (!job || !job.applicationLink) return null;
   const link = String(job.applicationLink).trim();
@@ -37,9 +13,9 @@ function getApplyHref(job) {
   }
 
   // If it's an email address
-  if (link.includes('@')) {
-    const subject = `Application for ${job.title || 'role'}`;
-    return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(link)}&su=${encodeURIComponent(subject)}`;
+if (link.includes('@')) {
+  const subject = `Application for ${job.title || 'role'}`;
+  return `mailto:${link}?subject=${encodeURIComponent(subject)}`;
   }
 
   return link;
