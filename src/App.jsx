@@ -2,6 +2,24 @@ import React, { useEffect, useState } from 'react'
 import { Routes, Route, Link, useNavigate } from 'react-router-dom'
 
 const API_BASE = '/api' // mapped to Netlify functions via netlify.toml
+// convert plain email -> mailto with subject
+function makeMailto(email, title) {
+  const subject = `Application for ${title || 'role'}`;
+  return `mailto:${email}?subject=${encodeURIComponent(subject)}`;
+}
+
+function getApplyHref(job) {
+  if (!job || !job.applicationLink) return null;
+  const link = String(job.applicationLink).trim();
+  if (link.startsWith('mailto:') || link.startsWith('http://') || link.startsWith('https://')) {
+    return link;
+  }
+  // plain email like "you@company.com"
+  if (link.includes('@')) {
+    return makeMailto(link, job.title);
+  }
+  return link;
+}
 
 function Layout({ children }) {
   return (
