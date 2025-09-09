@@ -3,22 +3,45 @@ import { Routes, Route, Link, useNavigate } from 'react-router-dom'
 
 const API_BASE = '/api' // mapped to Netlify functions via netlify.toml
 
-// convert plain email -> mailto with subject
-function makeMailto(email, title) {
-  const subject = `Application for ${title || 'role'}`;
-  return `mailto:${email}?subject=${encodeURIComponent(subject)}`;
+// Gmail compose link builder
+function getApplyHref(job) {
+  if (!job || !job.applicationLink) return null;
+  const link = String(job.applicationLink).trim();
+
+  // If it's already a full URL (http/https), just return it
+  if (link.startsWith('http://') || link.startsWith('https://')) {
+    return link;
+  }
+
+  // If it's already mailto
+  if (link.startsWith('mailto:')) {
+    return link;
+  }
+
+  // If it's an email address
+  if (link.includes('@')) {
+    const subject = `Application for ${job.title || 'role'}`;
+    return `mailto:${link}?subject=${encodeURIComponent(subject)}`;
+  }
+
+  return link;
 }
 
 function getApplyHref(job) {
   if (!job || !job.applicationLink) return null;
   const link = String(job.applicationLink).trim();
-  if (link.startsWith('mailto:') || link.startsWith('http://') || link.startsWith('https://')) {
+
+  // If it's already a full URL (http/https), just return it
+  if (link.startsWith('http://') || link.startsWith('https://')) {
     return link;
   }
-  // plain email like "you@company.com"
+
+  // If it's an email address
   if (link.includes('@')) {
-    return makeMailto(link, job.title);
+    const subject = `Application for ${job.title || 'role'}`;
+    return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(link)}&su=${encodeURIComponent(subject)}`;
   }
+
   return link;
 }
 
@@ -137,21 +160,8 @@ function Admin() {
     e.preventDefault()
     setMsg('Saving…')
 
-    // prepare payload and convert plain email to mailto
+    // prepare payload (leave Gmail link generation for frontend)
     const payload = { ...form }
-    if (payload.applicationLink) {
-      const link = payload.applicationLink.trim()
-      if (!link.startsWith('mailto:') && !link.startsWith('http://') && !link.startsWith('https://')) {
-        if (link.includes('@')) {
-          payload.applicationLink = `mailto:${link}?subject=${encodeURIComponent('Application for ' + (payload.title || 'role'))}`
-        } else {
-          payload.applicationLink = link
-        }
-      } else {
-        payload.applicationLink = link
-      }
-    }
-
     const res = await fetch(`${API_BASE}/jobs`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (sessionStorage.getItem('adminToken') || '') },
