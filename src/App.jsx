@@ -93,14 +93,13 @@ function Jobs() {
               {job.applicationLink && (() => {
                 const href = getApplyHref(job);
                 return href ? (
-                  <a 
-                    href={href} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    style={{background:'#2563eb', padding:'8px 12px', borderRadius:8, color:'#fff', textDecoration:'none'}}
+                  <button
+                     onClick={() => alert(`Please share your resume at ${job.applicationLink}`)} 
+                     style={{background:'#2563eb', padding:'8px 12px', borderRadius:8, color:'#fff', border:'none', cursor:'pointer'}}
+                    
                   >
                     Apply
-                  </a>
+                  </button>
                 ) : null;
               })()}
               <a href={window.location.href} style={{padding:'8px 12px', borderRadius:8, background:'#374151', color:'#fff', textDecoration:'none'}}>Share</a>
