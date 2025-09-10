@@ -53,14 +53,63 @@ function Layout({ children }) {
 }
 
 // --- Apply Modal ---
-function ApplyModal({ job, onClose }) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [resume, setResume] = useState(null);
-  const [msg, setMsg] = useState("");
+<form onSubmit={handleSubmit}>
+  <input
+    type="text"
+    placeholder="Your name"
+    value={name}
+    onChange={(e) => setName(e.target.value)}
+    required
+  />
+  <input
+    type="email"
+    placeholder="Your email"
+    value={email}
+    onChange={(e) => setEmail(e.target.value)}
+    required
+  />
+  <input
+   type="file"
+    accept=".pdf,.doc,.docx"
+    onChange={(e) => setResume(e.target.files[0])}
+    required
+  />
+  <button type="submit">Submit</button>
+  <button type="button" onClick={onClose}>Cancel</button>
+</form>
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+   <form onSubmit={handleSubmit}>
+  <input
+    type="text"
+    placeholder="Your name"
+    value={name}
+    onChange={(e) => setName(e.target.value)}
+    required
+  />
+  <input
+    type="email"
+    placeholder="Your email"
+    value={email}
+    onChange={(e) => setEmail(e.target.value)}
+    required
+  />
+  <input
+    type="tel"
+    placeholder="Your phone"
+    value={phone}
+    onChange={(e) => setPhone(e.target.value)}
+    required
+  />
+  <input
+    type="file"
+    accept=".pdf,.doc,.docx"
+    onChange={(e) => setResume(e.target.files[0])}
+    required
+  />
+  <button type="submit">Submit</button>
+  <button type="button" onClick={onClose}>Cancel</button>
+</form>
+
 
     if (hasApplied(job.id)) {
       setMsg("⚠️ You have already applied for this position.");
