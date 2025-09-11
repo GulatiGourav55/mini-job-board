@@ -1,29 +1,43 @@
 // api/apply.js
+
 import sendgrid from "@sendgrid/mail";
+
 sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    res.status(405).send("Method not allowed");
-    return;
+    return res.status(405).json({ error: "Method not allowed" });
   }
+
   const { name, email, phone, jobTitle } = req.body;
-  // you can validate here
+
+  if (!name || !email || !phone || !jobTitle) {
+    return res.status(400).json({ error: "Missing fields" });
+  }
 
   try {
     await sendgrid.send({
-      to: "your.email@domain.com",
-      from: "verified.sender@domain.com",
-      subject: `New Application for ${jobTitle}`,
+      to: "your.email@domain.com",        // ← your email
+      from: "verified.sender@domain.com",  // ← must be verified in SendGrid
+      subject: `New application for ${jobTitle}`,
       text: `
         Name: ${name}
         Email: ${email}
         Phone: ${phone}
+        Job: ${jobTitle}
+      `,
+      html: `
+        <h2>New Job Application</h2>
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Phone:</strong> ${phone}</p>
+        <p><strong>Job:</strong> ${jobTitle}</p>
       `
     });
-    res.status(200).json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to send application" });
+
+    return res.status(200).json({ message: "Application sent successfully" });
+  } catch (error) {
+    console.error("Apply error:", error);
+    return res.status(500).json({ error: "Failed to send application" });
   }
 }
