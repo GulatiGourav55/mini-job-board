@@ -53,63 +53,26 @@ function Layout({ children }) {
 }
 
 // --- Apply Modal ---
-<form onSubmit={handleSubmit}>
-  <input
-    type="text"
-    placeholder="Your name"
-    value={name}
-    onChange={(e) => setName(e.target.value)}
-    required
-  />
-  <input
-    type="email"
-    placeholder="Your email"
-    value={email}
-    onChange={(e) => setEmail(e.target.value)}
-    required
-  />
-  <input
-   type="file"
-    accept=".pdf,.doc,.docx"
-    onChange={(e) => setResume(e.target.files[0])}
-    required
-  />
-  <button type="submit">Submit</button>
-  <button type="button" onClick={onClose}>Cancel</button>
-</form>
+// --- Apply Modal ---
+function ApplyModal({ job, onClose }) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [resume, setResume] = useState(null);
+  const [msg, setMsg] = useState("");
 
-   <form onSubmit={handleSubmit}>
-  <input
-    type="text"
-    placeholder="Your name"
-    value={name}
-    onChange={(e) => setName(e.target.value)}
-    required
-  />
-  <input
-    type="email"
-    placeholder="Your email"
-    value={email}
-    onChange={(e) => setEmail(e.target.value)}
-    required
-  />
-  <input
-    type="tel"
-    placeholder="Your phone"
-    value={phone}
-    onChange={(e) => setPhone(e.target.value)}
-    required
-  />
-  <input
-    type="file"
-    accept=".pdf,.doc,.docx"
-    onChange={(e) => setResume(e.target.files[0])}
-    required
-  />
-  <button type="submit">Submit</button>
-  <button type="button" onClick={onClose}>Cancel</button>
-</form>
+  // Convert file → Base64
+  function toBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result.split(",")[1]); // remove prefix
+      reader.onerror = (error) => reject(error);
+    });
+  }
 
+  async function handleSubmit(e) {
+    e.preventDefault();
 
     if (hasApplied(job.id)) {
       setMsg("⚠️ You have already applied for this position.");
@@ -121,24 +84,32 @@ function Layout({ children }) {
       return;
     }
 
-    const formData = new FormData();
-    formData.append("name", name);
-    formData.append("email", email);
-    formData.append("resume", resume);
-    formData.append("jobId", job.id);
-    formData.append("jobTitle", job.title);
-
     try {
+      const resumeBase64 = await toBase64(resume);
+
+      const formData = {
+        name,
+        email,
+        phone,
+        jobId: job.id,
+        jobTitle: job.title,
+        resume: resumeBase64,
+        resumeName: resume.name,
+      };
+
       const res = await fetch(`${API_BASE}/apply`, {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
       });
 
       if (res.ok) {
         setMsg("✅ Application submitted successfully!");
         markAsApplied(job.id);
+        setTimeout(onClose, 1500); // auto-close after success
       } else {
-        setMsg("❌ Failed to submit. Please try again.");
+        const data = await res.json();
+        setMsg("❌ Failed to submit: " + (data.error || "Unknown error"));
       }
     } catch (err) {
       setMsg("❌ Network error. Please try again.");
@@ -156,7 +127,14 @@ function Layout({ children }) {
         justifyContent: "center",
       }}
     >
-      <div style={{ background: "#111827", padding: 24, borderRadius: 12, width: 400 }}>
+      <div
+        style={{
+          background: "#111827",
+          padding: 24,
+          borderRadius: 12,
+          width: 400,
+        }}
+      >
         <h2 style={{ marginTop: 0 }}>Apply for {job.title}</h2>
         <form onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }}>
           <input
@@ -178,6 +156,20 @@ function Layout({ children }) {
             placeholder="Your Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            required
+            style={{
+              padding: 10,
+              borderRadius: 8,
+              border: "1px solid #374151",
+              background: "#0b1220",
+              color: "#fff",
+            }}
+          />
+          <input
+            type="tel"
+            placeholder="Your Phone Number"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
             required
             style={{
               padding: 10,
@@ -221,7 +213,7 @@ function Layout({ children }) {
               Cancel
             </button>
           </div>
-          <p style={{ opacity: 0.8 }}>{msg}</p>
+          {msg && <p style={{ opacity: 0.8, color: "#fff" }}>{msg}</p>}
         </form>
       </div>
     </div>
