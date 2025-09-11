@@ -1,5 +1,4 @@
 // api/apply.js
-
 import sendgrid from "@sendgrid/mail";
 
 sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
@@ -9,7 +8,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { name, email, phone, jobTitle } = req.body;
+  const { name, email, phone, jobTitle, resume, resumeName } = req.body;
 
   if (!name || !email || !phone || !jobTitle) {
     return res.status(400).json({ error: "Missing fields" });
@@ -17,8 +16,8 @@ export default async function handler(req, res) {
 
   try {
     await sendgrid.send({
-      to: "your.email@domain.com",        // ← your email
-      from: "verified.sender@domain.com",  // ← must be verified in SendGrid
+      to: "gaurav.gulati@mastechdigital.com",        // your email
+      from: "gulatigourav1991@gmail.com", // must be verified in SendGrid
       subject: `New application for ${jobTitle}`,
       text: `
         Name: ${name}
@@ -32,7 +31,17 @@ export default async function handler(req, res) {
         <p><strong>Email:</strong> ${email}</p>
         <p><strong>Phone:</strong> ${phone}</p>
         <p><strong>Job:</strong> ${jobTitle}</p>
-      `
+      `,
+      attachments: resume
+        ? [
+            {
+              content: resume,
+              filename: resumeName || "resume.pdf",
+              type: "application/pdf",
+              disposition: "attachment",
+            },
+          ]
+        : [],
     });
 
     return res.status(200).json({ message: "Application sent successfully" });
